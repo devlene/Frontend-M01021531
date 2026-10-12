@@ -1,19 +1,35 @@
 div {
-    background-color: #d3d3d3;
     font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
     text-align: center;
 }
 
+body {
+    background-color: #cae4f5;
+}
+
 #lessonProducts {
-    align-items: center;
-    padding-bottom: 20px;
-    
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    padding: 16px;
+}
+
+#lessonProducts > h1 {
+    grid-column: 1 / -1;
+}
+
+#lessonProducts > div {
+    padding: 16px;
+    border: 1px solid #a8a8a8;
+    border-radius: 10px;
+    background-color: #faf7f7;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 12%);
 }
 
 img {
-    max-width: 50%;
+    max-width: 90%;
     height: auto;
-    border-radius: 20px;
+    border-radius: 5px;
 }
 
 figure {
@@ -23,7 +39,7 @@ figure {
 }
 
 button { 
-    background-color: #92acee;
+    background-color: #aeccf5;
     color: rgb(0, 0, 0);
     padding: 10px 20px;
     border: none;
@@ -35,7 +51,7 @@ button {
  } 
 
 button:hover {
-    background-color: #537ca4;
+    background-color: #90b5da;
 }
 
 .checkOutButton {

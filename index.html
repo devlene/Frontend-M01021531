@@ -15,20 +15,55 @@
                 <p class = "checkOutButton">
                 <button v-on:click="toggleCheckOut()":disabled="isCartEmpty">  <i class="fa fa-shopping-cart" aria-hidden="true"></i> Checkout ({{cartItemCount}})</button>
                 </p>
-                <div id ="lessonProducts"></div>
                 <h1>After School Club</h1>
+                <!-- Implement search here -->
+                 <p> Search: <input v-model="searchQuery" placeholder="Search by title, subject, location, or time">
+                 <p> Browse by Subject: <select v-model="filterSubject">
+                    <option disabled value="">Select a subject</option>
+                    <option value="">All Subjects</option>
+                    <option>Math</option>
+                    <option>Science</option>
+                    <option>English</option>
+                    <option>History</option>
+                    <option>Art</option>
+                    <option>Music</option>
+                    <option>Physical Education</option>
+                    <option>Advanced Math</option>
+                    <option>Advanced Science</option>
+                 </select></p>
+
+                 <p> Filter by price: <input type="number" v-model.number="filterPrice" placeholder="Enter maximum price"></p>
+                 
+                 <p> Sort by:
+                    <select v-model="sortOption">
+                        <option value="">None</option>
+                        <option value="priceAsc">Price: Low to High</option>
+                        <option value="priceDesc">Price: High to Low</option>
+                        <option value="availabilityAsc">Availability: Low to High</option>
+                        <option value="availabilityDesc">Availability: High to Low</option>
+                    </select>
+                 </p>
+                 <div id ="lessonProducts">
                  <div v-for="lessonProduct in lessons">
                     <h2>{{lessonProduct.lessonTitle}}</h2>
-                    <p> Subject: {{lessonProduct.subject}}</p>
-                    <p> Location: {{lessonProduct.location}}</p>
-                    <p> Available spots: {{lessonProduct.availability}}</p>
-                    <p> Price: {{lessonProduct.price}}</p>
-                    <button v-on:click="addToCart(lessonProduct)" :disabled="!canAddToCart(lessonProduct)"> <i class="fa fa-shopping-cart" aria-hidden="true"></i> {{buttonText(lessonProduct)}}</button>
-                    <p> Items of this type in Cart: {{cartProductCount(lessonProduct.lessonId)}}</p>
                     <figure>
                     <img v-bind:src="lessonProduct.photo.image" v-bind:alt="lessonProduct.photo.alt">
                     </figure>
+                    <button v-on:click="toggleDetail(lessonProduct)"> {{infoButtonText(lessonProduct)}} </button>
+                    <span v-if="lessonProduct.showDetail">
+                    <p><b> Subject: </b> </p>
+                    <p>{{lessonProduct.subject}}</p>
+                    <p> <b> Location: </b></p>
+                    <p> {{lessonProduct.location}}</p>
+                    <p> <b> Time: </b></p>
+                    <p> {{lessonProduct.time}}</p>
+                    </span>
+                    <p> <b>Available spots: </b> {{lessonProduct.availability}}</p>
+                    <p> <b>Items of this type in Cart: </b> {{cartProductCount(lessonProduct.lessonId)}}</p>
+                    <p> <b>Price: </b> {{lessonProduct.price}}</p>
+                    <button v-on:click="addToCart(lessonProduct)" :disabled="!canAddToCart(lessonProduct)"> <i class="fa fa-shopping-cart" aria-hidden="true"></i> {{cartButtonText(lessonProduct)}}</button>
                 </div>
+            </div>
                 
             </div>
             
@@ -68,7 +103,11 @@
                     lastName: "",
                     email: "",
                     phoneNumber: "",
-                    isSubmitted: false
+                    isSubmitted: false,
+                    searchQuery: "",
+                    filterSubject: "",
+                    filterPrice: null,
+                    sortOption: ""
                 }
             },
             computed:{
@@ -112,8 +151,11 @@
                 canAddToCart(lessonProduct) {
                     return lessonProduct.availability > 0;
                 },
-                buttonText(lessonProduct) {
+                cartButtonText(lessonProduct) {
                     return !this.canAddToCart(lessonProduct) ? "Sold Out" : "Add to Cart";
+                },
+                infoButtonText(lessonProduct) {
+                    return lessonProduct.showDetail ? "Show less" : "Show more";
                 },
                 toggleCheckOut() {
                     this.showProduct = this.showProduct ? false : true;
@@ -125,6 +167,9 @@
                     this.isSubmitted = true;
                     this.cart = [];
                     return true;
+                },
+                toggleDetail(lessonProduct) {
+                    lessonProduct.showDetail = !lessonProduct.showDetail;
                 }
             }
         });
