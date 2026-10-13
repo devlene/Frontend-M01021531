@@ -12,12 +12,19 @@
 <body>
         <div id ="lesson">
             <div v-if="showProduct">
+
+                <!--Separate placement for checkout button-->
                 <p class = "checkOutButton">
                 <button v-on:click="toggleCheckOut()":disabled="isCartEmpty">  <i class="fa fa-shopping-cart" aria-hidden="true"></i> Checkout ({{cartItemCount}})</button>
                 </p>
+
+                <div id = "fullPageHome">
                 <h1>After School Club</h1>
                 <!-- Implement search here -->
+                 <div id = "search">
+                    <!--Text search-->
                  <p> Search: <input v-model="searchQuery" placeholder="Search by title, subject, location, or time">
+                    <!--Dropdown selection for browse by subject-->
                  <p> Browse by Subject: <select v-model="filterSubject">
                     <option disabled value="">Select a subject</option>
                     <option value="">All Subjects</option>
@@ -32,8 +39,10 @@
                     <option>Advanced Science</option>
                  </select></p>
 
+                 <!--Enter maximum price-->
                  <p> Filter by price: <input type="number" v-model.number="filterPrice" placeholder="Enter maximum price"></p>
                  
+                 <!--Sort by filter-->
                  <p> Sort by:
                     <select v-model="sortOption">
                         <option value="">None</option>
@@ -43,7 +52,11 @@
                         <option value="availabilityDesc">Availability: High to Low</option>
                     </select>
                  </p>
+                 </div>
+
+                 <!--Lesson info boxes-->
                  <div id ="lessonProducts">
+                    <!--Iterate through lessonsArray-->
                  <div v-for="lessonProduct in lessons">
                     <h2>{{lessonProduct.lessonTitle}}</h2>
                     <figure>
@@ -63,12 +76,16 @@
                     <p> <b>Price: </b> {{lessonProduct.price}}</p>
                     <button v-on:click="addToCart(lessonProduct)" :disabled="!canAddToCart(lessonProduct)"> <i class="fa fa-shopping-cart" aria-hidden="true"></i> {{cartButtonText(lessonProduct)}}</button>
                 </div>
-            </div>
+                </div>
+                </div>
                 
             </div>
             
+            <!--Show checkout page-->
             <div v-else>
+                <div id = "fullPageCheckOut">
                 <h1>Checkout Page</h1>
+                <div id = "checkOutPage">
                 <p> Items in Cart: {{cartItemCount}}</p>
                 <ul style = "list-style-type: none;">
                     <div v-for="lessonProduct in lessons">
@@ -78,8 +95,10 @@
                     </div>
                 </ul>
 
+                <!--Form for user input in checkout page-->
                 <p> First Name: <input v-model="firstName"></p>
                 <p> Last Name: <input v-model="lastName"></p>
+                <!--Need regex here-->
                 <p> Email: <input v-model="email"></p>
                 <p> Phone Number: <input v-model="phoneNumber"></p>
                 <button v-on:click="checkOut" :disabled="isInfoEmpty"> <i class="fa fa-shopping-cart" aria-hidden="true"></i> Check Out</button>
@@ -87,6 +106,8 @@
                 
                 <p v-else-if="isSubmitted">Thank you for your order, {{firstName}} {{lastName}}! We will contact you at {{email}} or {{phoneNumber}}.</p>
                 <button v-on:click="toggleCheckOut()"> <i class="fa fa-arrow-left" aria-hidden="true"></i> Back to Products</button>
+                </div>
+                </div>
             </div>
             
         </div>
@@ -111,12 +132,15 @@
                 }
             },
             computed:{
+                /*Count total amount of items in cart*/
                 cartItemCount(){
                     return this.cart.length;
                 },
+                /*Check if cart is empty*/
                 isCartEmpty() {
                     return this.cart.length === 0;
                 },
+                /*Check if user has filled in all fields at checkout page*/
                 isInfoEmpty() {
                     if (this.firstName === "" || this.lastName === "" || this.email === "" || this.phoneNumber === "") {
                         return true;
@@ -125,6 +149,7 @@
                 }
             },
             methods: {
+                /*Adds lesson with lessonId to cart array, when clicking add to cart*/
                 addToCart(lessonProduct) {
                     if (!this.canAddToCart(lessonProduct)) {
                         return;
@@ -132,6 +157,7 @@
                     this.cart.push(lessonProduct.lessonId);
                     lessonProduct.availability--;
                 },
+                /*Removes lesson with lessonId from cart array, when clicking remove at checkout page*/
                 removeFromCart(lessonProduct) {
                     const index = this.cart.indexOf(lessonProduct.lessonId);
                     if (index !== -1) {
@@ -139,6 +165,7 @@
                         lessonProduct.availability++;
                     }
                 },
+                /*Count how many items of one product is in cart and return count*/
                 cartProductCount(lessonId) {
                     let count = 0;
                     for (let i = 0; i < this.cart.length; i++) {
@@ -148,18 +175,24 @@
                     }
                     return count;
                 },
+                /*Check if user can add the lesson to cart based on availability*/
                 canAddToCart(lessonProduct) {
                     return lessonProduct.availability > 0;
                 },
+                /*Change "Add to cart" button to Sold Out when availability is 0*/
                 cartButtonText(lessonProduct) {
                     return !this.canAddToCart(lessonProduct) ? "Sold Out" : "Add to Cart";
                 },
+                /*Change "Show more" button to "Show less" when clicking it*/
                 infoButtonText(lessonProduct) {
                     return lessonProduct.showDetail ? "Show less" : "Show more";
                 },
+                /*Toggle check out page*/
                 toggleCheckOut() {
                     this.showProduct = this.showProduct ? false : true;
                 },
+                /*Checkout button is disabled if user info is not valid*/
+                /*When input is valid, empty cart*/
                 checkOut() {
                     if (this.isInfoEmpty) {
                         return false;
@@ -168,8 +201,13 @@
                     this.cart = [];
                     return true;
                 },
+                /*Toggles more details about lesson with "Show more" button*/
                 toggleDetail(lessonProduct) {
                     lessonProduct.showDetail = !lessonProduct.showDetail;
+                },
+                /*Fetch data from backend*/
+                async fetchData() {
+
                 }
             }
         });
