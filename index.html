@@ -6,7 +6,6 @@
     <title>After School Club</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script src="lessons.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
@@ -117,7 +116,7 @@
         const myApp = createApp({
             data() {
                 return {
-                    lessons: lessonsArray,
+                    lessons: [],
                     cart: [],
                     showProduct: true,
                     firstName: "",
@@ -146,7 +145,11 @@
                         return true;
                     }
                     return false;
-                }
+                },
+            },
+            /*Fetch data from backend*/
+                created() {
+                    this.fetchData();
             },
             methods: {
                 /*Adds lesson with lessonId to cart array, when clicking add to cart*/
@@ -207,7 +210,9 @@
                 },
                 /*Fetch data from backend*/
                 async fetchData() {
-
+                    const url = "http://localhost:3000/";
+                    let response = await (fetch (url));
+                    this.lessons = await response.json();
                 }
             }
         });
