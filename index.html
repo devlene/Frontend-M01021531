@@ -14,7 +14,7 @@
 
                 <!--Separate placement for checkout button-->
                 <p class = "checkOutButton">
-                <button v-on:click="toggleCheckOut()":disabled="isCartEmpty">  <i class="fa fa-shopping-cart" aria-hidden="true"></i> Checkout ({{cartItemCount}})</button>
+                <button v-on:click="toggleCheckOut()" :disabled="isCartEmpty">  <i class="fa fa-shopping-cart" aria-hidden="true"></i> Checkout ({{cartItemCount}})</button>
                 </p>
 
                 <div id = "fullPageHome">
@@ -22,7 +22,7 @@
                 <!-- Implement search here -->
                  <div id = "search">
                     <!--Text search-->
-                 <p> Search: <input v-model="searchQuery" placeholder="Search by title, subject, location, or time">
+                 <p> Search: <input v-model="searchQuery" placeholder="Search by title, subject, location, or time"></p>
                     <!--Dropdown selection for browse by subject-->
                  <p> Browse by Subject: <select v-model="filterSubject">
                     <option disabled value="">Select a subject</option>
@@ -34,8 +34,7 @@
                     <option>Art</option>
                     <option>Music</option>
                     <option>Physical Education</option>
-                    <option>Advanced Math</option>
-                    <option>Advanced Science</option>
+                    <option>Foreign Languages</option>
                  </select></p>
 
                  <!--Enter maximum price-->
@@ -43,20 +42,26 @@
                  
                  <!--Sort by filter-->
                  <p> Sort by:
-                    <select v-model="sortOption">
-                        <option value="">None</option>
-                        <option value="priceAsc">Price: Low to High</option>
-                        <option value="priceDesc">Price: High to Low</option>
-                        <option value="availabilityAsc">Availability: Low to High</option>
-                        <option value="availabilityDesc">Availability: High to Low</option>
+                    <select v-model="sortType">
+                        <option value="price">Price</option>
+                        <option value="availability">Availability</option>
+                        <option value="location">Location</option>
+                        <option value="subject">Subject</option>
                     </select>
                  </p>
+                 <p> Order:
+                    <select v-model="sortAscending">
+                        <option :value="true"> Low-High </option>
+                        <option :value="false"> High-Low </option>
+                    </select>
+                 </p>
+                 <p><button v-on:click="clearFilters()" :disabled="!hasActiveFilters">Clear Filters</button></p>
                  </div>
 
                  <!--Lesson info boxes-->
                  <div id ="lessonProducts">
                     <!--Iterate through lessonsArray-->
-                 <div v-for="lessonProduct in lessons">
+                 <div v-for="lessonProduct in sortedLessons" :key="lessonProduct.lessonId">
                     <h2>{{lessonProduct.lessonTitle}}</h2>
                     <figure>
                     <img v-bind:src="lessonProduct.photo.image" v-bind:alt="lessonProduct.photo.alt">
@@ -72,7 +77,7 @@
                     </span>
                     <p> <b>Available spots: </b> {{lessonProduct.availability}}</p>
                     <p> <b>Items of this type in Cart: </b> {{cartProductCount(lessonProduct.lessonId)}}</p>
-                    <p> <b>Price: </b> {{lessonProduct.price}}</p>
+                    <p> <b>Price: </b> £{{lessonProduct.price}} per session</p>
                     <button v-on:click="addToCart(lessonProduct)" :disabled="!canAddToCart(lessonProduct)"> <i class="fa fa-shopping-cart" aria-hidden="true"></i> {{cartButtonText(lessonProduct)}}</button>
                 </div>
                 </div>
@@ -127,7 +132,8 @@
                     searchQuery: "",
                     filterSubject: "",
                     filterPrice: null,
-                    sortOption: ""
+                    sortType: "price",  // "price" / "availability" / "location" / "subject"
+                    sortAscending: true // true = ascending, false = descending
                 }
             },
             computed:{
@@ -146,6 +152,69 @@
                     }
                     return false;
                 },
+                /*Sort lessons sort type and increasing or decreasing*/
+                sortedLessons() {
+                    /*Make input case-insensitive*/
+                    const query = this.searchQuery.trim().toLowerCase();
+
+                    /*Filter:
+                    filter() builds new array containing only the elements passing the checks below
+                    Benefit of a new array is that the sort function doesn't modify the original this.lessons data*/
+                    const result = this.lessons.filter(lesson => {
+
+                        /*Search box:
+                        Passes if the box is empty, or if the text matches any titles, subject, location or time
+                        String() lets numbers/other types be searched too*/
+                        const matchesSearch = query === "" ||
+                        [lesson.lessonTitle, lesson.subject, lesson.location, lesson.time]
+                        .some(field => String(field).toLowerCase().includes(query));
+
+                        /*Subject dropdown: 
+                        "" means "All subjects", so everything passes
+                        Otherwise the lesson's subject must match the selected one*/
+                        const matchesSubject = this.filterSubject === "" || lesson.subject === this.filterSubject;
+
+                        /*Max price box: 
+                        If nothing is entered, everything passes
+                        Otherwise the lesson's price must be at or below the entered value*/
+                        const matchesPrice = this.filterPrice === null || this.filterPrice === "" || lesson.price <= this.filterPrice;
+
+                        /*A lesson is kept only if it passes all three filters*/
+                        return matchesSearch && matchesSubject && matchesPrice;
+                    });
+
+                    /*Sort:
+                    direction multiplies the comparison result:
+                    1 = ascending
+                    -1 = descending*/
+                    const direction = this.sortAscending ? 1 : -1;
+
+                    /*Sort type*/
+                    const type = this.sortType;
+
+                    /*sort() compares two lessons (a and b) at a time
+                    negative result puts a before b, and vice versa with positive*/
+                    return result.sort((a, b) => {
+                        const x = a[type];
+                        const y = b[type];
+
+                        /*Text values (like location, subject)
+                        localeCompare() compares alphabetically and returns negative, zero or positive*/
+                        if (typeof x === "string") {
+                            return x.localeCompare(y) * direction;
+                        }
+
+                        /*Number values (like price, availability)
+                        subtracting gives a negative result if x<y, positive if x>y and 0 if x==y*/
+                        return (x - y) * direction;
+                    });
+                },
+                /*Enable clear filter button only when any filter is currently active*/
+                hasActiveFilters() {
+                    return this.searchQuery !== "" ||
+                    this.filterSubject !== "" ||
+                    (this.filterPrice !== null && this.filterPrice !== "");
+                }
             },
             /*Fetch data from backend*/
                 created() {
@@ -207,6 +276,14 @@
                 /*Toggles more details about lesson with "Show more" button*/
                 toggleDetail(lessonProduct) {
                     lessonProduct.showDetail = !lessonProduct.showDetail;
+                },
+                /*Clear chosen filters*/
+                clearFilters() {
+                    this.searchQuery = "";
+                    this.filterSubject = "";
+                    this.filterPrice = null;
+                    this.sortType = "price";
+                    this.sortAscending = true;
                 },
                 /*Fetch data from backend*/
                 async fetchData() {
