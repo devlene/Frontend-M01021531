@@ -37,8 +37,6 @@
                     <option>Foreign Languages</option>
                  </select></p>
 
-                 <!--Enter maximum price-->
-                 <p> Filter by price: <input type="number" v-model.number="filterPrice" placeholder="Enter maximum price"></p>
                  
                  <!--Sort by filter-->
                  <p> Sort by:
@@ -51,12 +49,16 @@
                  </p>
                  <p> Order:
                     <select v-model="sortAscending">
-                        <option :value="true"> Low-High </option>
-                        <option :value="false"> High-Low </option>
+                        <option :value="true"> {{ (sortType === 'price' || sortType === 'availability') ? 'Low-High' : 'A-Z'}} </option>
+                        <option :value="false"> {{ (sortType === 'price' || sortType === 'availability') ? 'High-Low' : 'Z-A'}} </option>
                     </select>
                  </p>
                  <p><button v-on:click="clearFilters()" :disabled="!hasActiveFilters">Clear Filters</button></p>
                  </div>
+
+                 <!--Total results-->
+                 <p>Showing {{resultCount}} of {{lessons.length}} lessons</p>
+                 <p v-if="resultCount === 0">No lessons match your search.</p>
 
                  <!--Lesson info boxes-->
                  <div id ="lessonProducts">
@@ -64,7 +66,7 @@
                  <div v-for="lessonProduct in sortedLessons" :key="lessonProduct.lessonId">
                     <h2>{{lessonProduct.lessonTitle}}</h2>
                     <figure>
-                    <img v-bind:src="lessonProduct.photo.image" v-bind:alt="lessonProduct.photo.alt">
+                    <img v-bind:src="imageAddress(lessonProduct)" v-bind:alt="lessonProduct.photo.alt">
                     </figure>
                     <button v-on:click="toggleDetail(lessonProduct)"> {{infoButtonText(lessonProduct)}} </button>
                     <span v-if="lessonProduct.showDetail">
@@ -103,12 +105,11 @@
                 <p> First Name: <input v-model="firstName"></p>
                 <p> Last Name: <input v-model="lastName"></p>
                 <!--Need regex here-->
-                <p> Email: <input v-model="email"></p>
                 <p> Phone Number: <input v-model="phoneNumber"></p>
-                <button v-on:click="checkOut" :disabled="isInfoEmpty"> <i class="fa fa-shopping-cart" aria-hidden="true"></i> Check Out</button>
-                <p v-if="isInfoEmpty">Please fill in all required information.</p>
+                <button v-on:click="checkOut" :disabled="!canCheckOut || isCartEmpty"> <i class="fa fa-shopping-cart" aria-hidden="true"></i> Check Out</button>
+                <p v-if="!canCheckOut">Please fill in all required information.</p>
                 
-                <p v-else-if="isSubmitted">Thank you for your order, {{firstName}} {{lastName}}! We will contact you at {{email}} or {{phoneNumber}}.</p>
+                <p v-else-if="isSubmitted">Thank you for your order, {{firstName}} {{lastName}}! We will contact you at {{phoneNumber}}.</p>
                 <button v-on:click="toggleCheckOut()"> <i class="fa fa-arrow-left" aria-hidden="true"></i> Back to Products</button>
                 </div>
                 </div>
@@ -117,6 +118,7 @@
         </div>
 
     <script type = "module">
+        const AFTERSCHOOL_URL = "http://localhost:3000";
         const { createApp } = Vue;
         const myApp = createApp({
             data() {
@@ -126,12 +128,10 @@
                     showProduct: true,
                     firstName: "",
                     lastName: "",
-                    email: "",
                     phoneNumber: "",
                     isSubmitted: false,
                     searchQuery: "",
                     filterSubject: "",
-                    filterPrice: null,
                     sortType: "price",  // "price" / "availability" / "location" / "subject"
                     sortAscending: true // true = ascending, false = descending
                 }
@@ -141,17 +141,30 @@
                 cartItemCount(){
                     return this.cart.length;
                 },
+
                 /*Check if cart is empty*/
                 isCartEmpty() {
                     return this.cart.length === 0;
                 },
-                /*Check if user has filled in all fields at checkout page*/
-                isInfoEmpty() {
-                    if (this.firstName === "" || this.lastName === "" || this.email === "" || this.phoneNumber === "") {
-                        return true;
-                    }
-                    return false;
+
+                /*Regular expression for names:
+                Must contain letters and spaces only*/
+                isNameValid() {
+                    const letters = /^[A-Za-z\s]+$/;
+                    return letters.test(this.firstName) && letters.test(this.lastName);
                 },
+
+                /*Regular expression for phone numbers:
+                Must contain digits only*/
+                isPhoneValid() {
+                    return /^[0-9]+$/.test(this.phoneNumber);
+                },
+
+                /*Checkout is allowed only with valid details and something in the cart*/
+                canCheckOut() {
+                    return this.isNameValid && this.isPhoneValid && !this.isCartEmpty;
+                },
+
                 /*Sort lessons sort type and increasing or decreasing*/
                 sortedLessons() {
                     /*Make input case-insensitive*/
@@ -174,13 +187,8 @@
                         Otherwise the lesson's subject must match the selected one*/
                         const matchesSubject = this.filterSubject === "" || lesson.subject === this.filterSubject;
 
-                        /*Max price box: 
-                        If nothing is entered, everything passes
-                        Otherwise the lesson's price must be at or below the entered value*/
-                        const matchesPrice = this.filterPrice === null || this.filterPrice === "" || lesson.price <= this.filterPrice;
-
                         /*A lesson is kept only if it passes all three filters*/
-                        return matchesSearch && matchesSubject && matchesPrice;
+                        return matchesSearch && matchesSubject;
                     });
 
                     /*Sort:
@@ -209,16 +217,34 @@
                         return (x - y) * direction;
                     });
                 },
+                
+                resultCount() {
+                    return this.sortedLessons.length;
+                },
+
                 /*Enable clear filter button only when any filter is currently active*/
                 hasActiveFilters() {
                     return this.searchQuery !== "" ||
                     this.filterSubject !== "" ||
-                    (this.filterPrice !== null && this.filterPrice !== "");
+                    this.sortType !== "price" ||
+                    this.sortAscending !== true;
+                },
+
+                order() {
+                    return {
+                        firstName: this.firstName,
+                        lastName: this.lastName,
+                        email: this.email,
+                        phoneNumber: this.phoneNumber,
+                        lessonIds: this.cart
+                    };
                 }
             },
+
             /*Fetch data from backend*/
                 created() {
                     this.fetchData();
+
             },
             methods: {
                 /*Adds lesson with lessonId to cart array, when clicking add to cart*/
@@ -229,6 +255,7 @@
                     this.cart.push(lessonProduct.lessonId);
                     lessonProduct.availability--;
                 },
+
                 /*Removes lesson with lessonId from cart array, when clicking remove at checkout page*/
                 removeFromCart(lessonProduct) {
                     const index = this.cart.indexOf(lessonProduct.lessonId);
@@ -237,6 +264,7 @@
                         lessonProduct.availability++;
                     }
                 },
+
                 /*Count how many items of one product is in cart and return count*/
                 cartProductCount(lessonId) {
                     let count = 0;
@@ -247,47 +275,72 @@
                     }
                     return count;
                 },
+
                 /*Check if user can add the lesson to cart based on availability*/
                 canAddToCart(lessonProduct) {
                     return lessonProduct.availability > 0;
                 },
+
                 /*Change "Add to cart" button to Sold Out when availability is 0*/
                 cartButtonText(lessonProduct) {
                     return !this.canAddToCart(lessonProduct) ? "Sold Out" : "Add to Cart";
                 },
+
                 /*Change "Show more" button to "Show less" when clicking it*/
                 infoButtonText(lessonProduct) {
                     return lessonProduct.showDetail ? "Show less" : "Show more";
                 },
+
                 /*Toggle check out page*/
                 toggleCheckOut() {
                     this.showProduct = this.showProduct ? false : true;
                 },
-                /*Checkout button is disabled if user info is not valid*/
-                /*When input is valid, empty cart*/
-                checkOut() {
-                    if (this.isInfoEmpty) {
+
+                /*Checkout button is disabled if user info is not valid
+                When input is valid, empty cart.
+                Order info is sent to server*/
+                async checkOut() {
+                    if (!this.canCheckOut) {
                         return false;
                     }
+                    await this.postOrder();
                     this.isSubmitted = true;
                     this.cart = [];
                     return true;
                 },
+
                 /*Toggles more details about lesson with "Show more" button*/
                 toggleDetail(lessonProduct) {
                     lessonProduct.showDetail = !lessonProduct.showDetail;
                 },
+
                 /*Clear chosen filters*/
                 clearFilters() {
                     this.searchQuery = "";
                     this.filterSubject = "";
-                    this.filterPrice = null;
                     this.sortType = "price";
                     this.sortAscending = true;
                 },
+
+                imageAddress(lessonProduct) {
+                    return AFTERSCHOOL_URL + "/" + lessonProduct.photo.image;
+                },
+
+                async postOrder() {
+                    const url = AFTERSCHOOL_URL + "/orders";
+                    const options = {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(this.order)
+                    }
+                    let response = await (fetch (url, options));
+                },
+
                 /*Fetch data from backend*/
                 async fetchData() {
-                    const url = "http://localhost:3000/";
+                    const url = AFTERSCHOOL_URL + "/lessons";
                     let response = await (fetch (url));
                     this.lessons = await response.json();
                 }
