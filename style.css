@@ -27,10 +27,6 @@ body {
     margin: 30px;
 }
 
-/*#lessonProducts  {
-    grid-column: 1 / -1;
-}*/
-
 #lessonProducts > div {
     padding: 16px;
     border: 1px solid #a8a8a8;
@@ -94,7 +90,7 @@ button:hover {
 .checkOutButton {
     display: flex;
     justify-content: end;
-    margin-right: 15px;
+    margin-right: 150px;
     padding-top: 10px;
 }
 

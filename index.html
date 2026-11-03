@@ -10,12 +10,15 @@
 </head>
 <body>
         <div id ="lesson">
-            <div v-if="showProduct">
 
-                <!--Separate placement for checkout button-->
+            <!--Separate placement for checkout button-->
                 <p class = "checkOutButton">
-                <button v-on:click="toggleCheckOut()" :disabled="isCartEmpty">  <i class="fa fa-shopping-cart" aria-hidden="true"></i> Checkout ({{cartItemCount}})</button>
+                <button v-on:click="toggleCheckOut()" :disabled="showProduct && isCartEmpty">  
+                    <i class="fa fa-shopping-cart" aria-hidden="true"></i> 
+                    {{ showProduct ? 'Checkout (' + cartItemCount + ')' : 'Back to products' }}</button>
                 </p>
+
+            <div v-if="showProduct">
 
                 <div id = "fullPageHome">
                 <h1>After School Club</h1>
@@ -110,7 +113,6 @@
                 <p v-if="!canCheckOut">Please fill in all required information.</p>
                 
                 <p v-else-if="isSubmitted">Thank you for your order, {{firstName}} {{lastName}}! We will contact you at {{phoneNumber}}.</p>
-                <button v-on:click="toggleCheckOut()"> <i class="fa fa-arrow-left" aria-hidden="true"></i> Back to Products</button>
                 </div>
                 </div>
             </div>
@@ -234,7 +236,6 @@
                     return {
                         firstName: this.firstName,
                         lastName: this.lastName,
-                        email: this.email,
                         phoneNumber: this.phoneNumber,
                         lessonIds: this.cart
                     };
