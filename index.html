@@ -104,15 +104,16 @@
                     </div>
                 </ul>
 
+                <p v-if="!isNameValid || !isPhoneValid">Please enter a valid name (letters only) and an 11-digit UK phone number starting with 0.</p>
+                
                 <!--Form for user input in checkout page-->
                 <p> First Name: <input v-model="firstName"></p>
                 <p> Last Name: <input v-model="lastName"></p>
-                <!--Need regex here-->
                 <p> Phone Number: <input v-model="phoneNumber"></p>
                 <button v-on:click="checkOut" :disabled="!canCheckOut || isCartEmpty"> <i class="fa fa-shopping-cart" aria-hidden="true"></i> Check Out</button>
-                <p v-if="!canCheckOut">Please fill in all required information.</p>
                 
-                <p v-else-if="isSubmitted">Thank you for your order, {{firstName}} {{lastName}}! We will contact you at {{phoneNumber}}.</p>
+                <p v-if="isSubmitted">Thank you for your order, {{firstName}} {{lastName}}! We will contact you at {{phoneNumber}}.</p>
+
                 </div>
                 </div>
             </div>
@@ -152,14 +153,14 @@
                 /*Regular expression for names:
                 Must contain letters and spaces only*/
                 isNameValid() {
-                    const letters = /^[A-Za-z\s]+$/;
-                    return letters.test(this.firstName) && letters.test(this.lastName);
+                    const letters = /^[A-Za-z]+(?:[-' ][A-Za-z]+)*$/;
+                    return letters.test(this.firstName.trim()) && letters.test(this.lastName.trim());
                 },
 
                 /*Regular expression for phone numbers:
                 Must contain digits only*/
                 isPhoneValid() {
-                    return /^[0-9]+$/.test(this.phoneNumber);
+                    return /^0[0-9]{10}$/.test(this.phoneNumber.trim());
                 },
 
                 /*Checkout is allowed only with valid details and something in the cart*/
@@ -255,6 +256,7 @@
                     }
                     this.cart.push(lessonProduct.lessonId);
                     lessonProduct.availability--;
+                    this.isSubmitted = false; // Reset submission status when adding to cart
                 },
 
                 /*Removes lesson with lessonId from cart array, when clicking remove at checkout page*/
