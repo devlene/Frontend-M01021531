@@ -46,22 +46,25 @@ body {
     margin: auto;
 }
 
-#search {
+#filter {
     padding: 16px;
-    border: 1px solid #a8a8a8;
     border-radius: 10px;
     background-color: #abd0f360;
-    box-shadow: 0 2px 6px rgb(0 0 0 / 12%);
-    display: flex;
-    grid-template-columns: auto-fit;
+    flex-wrap: wrap;
     max-height: fit-content;
-    max-width: fit-content;
+    max-width: 20%;
     margin: auto;
+}
+
+#filter h4 {
+    flex-basis: 100%;
+    width: 100%;
+    margin: 0 0 8px 0;
 }
 
 img {
     max-width: 90%;
-    height: auto;
+    height: 125px;
     border-radius: 5px;
 }
 
@@ -78,9 +81,6 @@ button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    align-items: center;
  } 
 
 button:hover {
@@ -90,8 +90,40 @@ button:hover {
 .checkOutButton {
     display: flex;
     justify-content: end;
+    margin-left: auto;
     margin-right: 150px;
+    margin-bottom: 25px;
+}
+
+#checkOutList {
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.clearFilterButton {
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 3px;
+}
+
+#searchBar {
+    display: flex;
+    justify-content: start;
+    margin-left: 150px;
+    margin-bottom: 15px;
     padding-top: 10px;
+}
+
+#topBar {
+    display: flex;
+    justify-content: space-between;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-bottom: 15px;
+    padding-top: 10px;
+    border-radius: 10px;
+    background-color: #abd0f360;
 }
 
 button:disabled {

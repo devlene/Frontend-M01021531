@@ -11,21 +11,29 @@
 <body>
         <div id ="lesson">
 
-            <!--Separate placement for checkout button-->
+            <!--Separate placement for checkout button and search bar-->
+            <div id = "topBar">
+                <div v-if="showProduct">
+                <div id = "searchBar">
+                    <!--Text search-->
+                    <p> <i class="fa fa-search" aria-hidden="true"></i> 
+                        Search: <input v-model="searchQuery" placeholder="Search by title, location, price, or availability"></p>
+                </div>
+                </div>
                 <p class = "checkOutButton">
                 <button v-on:click="toggleCheckOut()" :disabled="showProduct && isCartEmpty">  
                     <i class="fa fa-shopping-cart" aria-hidden="true"></i> 
-                    {{ showProduct ? 'Checkout (' + cartItemCount + ')' : 'Back to products' }}</button>
+                    {{ showProduct ? 'Cart (' + cartItemCount + ')' : 'Back to products' }}</button>
                 </p>
+                </div>
 
             <div v-if="showProduct">
 
                 <div id = "fullPageHome">
                 <h1>After School Club</h1>
-                <!-- Implement search here -->
-                 <div id = "search">
-                    <!--Text search-->
-                 <p> Search: <input v-model="searchQuery" placeholder="Search by title, subject, location, or time"></p>
+
+                 <div id = "filter">
+                    <h4> Filters: </h4>
                     <!--Dropdown selection for browse by subject-->
                  <p> Browse by Subject: <select v-model="filterSubject">
                     <option disabled value="">Select a subject</option>
@@ -56,7 +64,8 @@
                         <option :value="false"> {{ (sortType === 'price' || sortType === 'availability') ? 'High-Low' : 'Z-A'}} </option>
                     </select>
                  </p>
-                 <p><button v-on:click="clearFilters()" :disabled="!hasActiveFilters">Clear Filters</button></p>
+                 <p class = "clearFilterButton"><button v-on:click="clearFilters()" :disabled="!hasActiveFilters">
+                    <i class="fa fa-times" aria-hidden="true"></i> Clear Filters</button></p>
                  </div>
 
                  <!--Total results-->
@@ -71,7 +80,9 @@
                     <figure>
                     <img v-bind:src="imageAddress(lessonProduct)" v-bind:alt="lessonProduct.photo.alt">
                     </figure>
-                    <button v-on:click="toggleDetail(lessonProduct)"> {{infoButtonText(lessonProduct)}} </button>
+                    <button v-on:click="toggleDetail(lessonProduct)"> 
+                        <i class="fa fa-info-circle" aria-hidden="true"></i>
+                        {{infoButtonText(lessonProduct)}} </button>
                     <span v-if="lessonProduct.showDetail">
                     <p><b> Subject: </b> </p>
                     <p>{{lessonProduct.subject}}</p>
@@ -95,12 +106,16 @@
                 <div id = "fullPageCheckOut">
                 <h1>Checkout Page</h1>
                 <div id = "checkOutPage">
-                <p> Items in Cart: {{cartItemCount}}</p>
+                <h4> Items in Cart: {{cartItemCount}}</h4>
                 <ul style = "list-style-type: none;">
                     <div v-for="lessonProduct in lessons">
+                        <div id = "checkOutList">
                         <li v-if="cartProductCount(lessonProduct.lessonId) > 0">
-                        {{lessonProduct.lessonTitle}} - Quantity: {{cartProductCount(lessonProduct.lessonId)}} <button v-on:click="removeFromCart(lessonProduct)">Remove</button>
+                        {{lessonProduct.lessonTitle}} ( {{cartProductCount(lessonProduct.lessonId)}} ) 
+                        <button v-on:click="removeFromCart(lessonProduct)"><i class="fa fa-trash" aria-hidden="true"></i> 
+                            Remove</button>
                         </li>
+                        </div>
                     </div>
                 </ul>
 
@@ -134,6 +149,7 @@
                     phoneNumber: "",
                     isSubmitted: false,
                     searchQuery: "",
+                    searchResultIds: null,
                     filterSubject: "",
                     sortType: "price",  // "price" / "availability" / "location" / "subject"
                     sortAscending: true // true = ascending, false = descending
@@ -170,20 +186,16 @@
 
                 /*Sort lessons sort type and increasing or decreasing*/
                 sortedLessons() {
-                    /*Make input case-insensitive*/
-                    const query = this.searchQuery.trim().toLowerCase();
-
                     /*Filter:
                     filter() builds new array containing only the elements passing the checks below
                     Benefit of a new array is that the sort function doesn't modify the original this.lessons data*/
                     const result = this.lessons.filter(lesson => {
 
                         /*Search box:
-                        Passes if the box is empty, or if the text matches any titles, subject, location or time
-                        String() lets numbers/other types be searched too*/
-                        const matchesSearch = query === "" ||
-                        [lesson.lessonTitle, lesson.subject, lesson.location, lesson.time]
-                        .some(field => String(field).toLowerCase().includes(query));
+                        searchResultIds holds the ids returned by the back-end /search route.
+                        null means no search is active, so every lesson passes*/
+                        const matchesSearch = this.searchResultIds === null ||
+                            this.searchResultIds.includes(lesson.lessonId);
 
                         /*Subject dropdown: 
                         "" means "All subjects", so everything passes
@@ -242,6 +254,12 @@
                     };
                 }
             },
+            /*Watch search results from backend*/
+                watch: {
+                    searchQuery() {
+                        this.fetchSearch();
+                    }
+                },
 
             /*Fetch data from backend*/
                 created() {
@@ -320,6 +338,7 @@
                 /*Clear chosen filters*/
                 clearFilters() {
                     this.searchQuery = "";
+                    this.searchResultIds = null;
                     this.filterSubject = "";
                     this.sortType = "price";
                     this.sortAscending = true;
@@ -346,6 +365,22 @@
                     const url = AFTERSCHOOL_URL + "/lessons";
                     let response = await (fetch (url));
                     this.lessons = await response.json();
+                },
+
+                /*Asks the backend to search, keeps the ids of the matching lessons*/
+                async fetchSearch() {
+                    const q = this.searchQuery.trim();
+                    if (q === "") {
+                        this.searchResultIds = null;
+                        return;
+                    }
+
+                    const response = await fetch(AFTERSCHOOL_URL + "/search?q=" + encodeURIComponent(q));
+                    const results = await response.json();
+                    // ignore this reply if the user has typed something else in the meantime
+                    if (q === this.searchQuery.trim()) {
+                        this.searchResultIds = results.map(lesson => lesson.lessonId);
+                    }
                 }
             }
         });
