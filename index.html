@@ -48,6 +48,12 @@
                     <option>Foreign Languages</option>
                  </select></p>
 
+                 <!--Dropdown selection for browse by teacher-->
+                 <p> Browse by teacher: <select v-model="filterTeacher">
+                    <option value="">All Teachers</option>
+                    <option v-for="name in teacherNames" :key="name">{{name}}</option>
+                 </select></p>
+
                  
                  <!--Sort by filter-->
                  <p> Sort by:
@@ -86,6 +92,8 @@
                     <span v-if="lessonProduct.showDetail">
                     <p><b> Subject: </b> </p>
                     <p>{{lessonProduct.subject}}</p>
+                    <p> <b> Teacher: </b></p>
+                    <p> {{lessonProduct.teacher.firstName}} {{lessonProduct.teacher.lastName}}</p>
                     <p> <b> Location: </b></p>
                     <p> {{lessonProduct.location}}</p>
                     <p> <b> Time: </b></p>
@@ -151,6 +159,7 @@
                     searchQuery: "",
                     searchResultIds: null,
                     filterSubject: "",
+                    filterTeacher: "",
                     sortType: "price",  // "price" / "availability" / "location" / "subject"
                     sortAscending: true // true = ascending, false = descending
                 }
@@ -202,8 +211,13 @@
                         Otherwise the lesson's subject must match the selected one*/
                         const matchesSubject = this.filterSubject === "" || lesson.subject === this.filterSubject;
 
+                        /*Teacher dropdown
+                        "" means "All teachers", otherwise the lesson's teachers full name must match*/
+                        const matchesTeacher = this.filterTeacher === "" || 
+                            (lesson.teacher && (lesson.teacher.firstName + " " + lesson.teacher.lastName) === this.filterTeacher);
+
                         /*A lesson is kept only if it passes all three filters*/
-                        return matchesSearch && matchesSubject;
+                        return matchesSearch && matchesSubject && matchesTeacher;
                     });
 
                     /*Sort:
@@ -232,7 +246,15 @@
                         return (x - y) * direction;
                     });
                 },
-                
+
+                /*Teacher names taken from lessons, sorted alphabetically*/
+                teacherNames() {
+                    const names = this.lessons
+                        .filter(lesson => lesson.teacher)
+                        .map(lesson => lesson.teacher.firstName + " " + lesson.teacher.lastName);
+                    return [...new Set(names)].sort();
+                },
+
                 resultCount() {
                     return this.sortedLessons.length;
                 },
@@ -241,6 +263,7 @@
                 hasActiveFilters() {
                     return this.searchQuery !== "" ||
                     this.filterSubject !== "" ||
+                    this.filterTeacher !== "" ||
                     this.sortType !== "price" ||
                     this.sortAscending !== true;
                 },
@@ -340,6 +363,7 @@
                     this.searchQuery = "";
                     this.searchResultIds = null;
                     this.filterSubject = "";
+                    this.filterTeacher = "";
                     this.sortType = "price";
                     this.sortAscending = true;
                 },
