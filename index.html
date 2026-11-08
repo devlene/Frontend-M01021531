@@ -35,17 +35,9 @@
                  <div id = "filter">
                     <h4> Filters: </h4>
                     <!--Dropdown selection for browse by subject-->
-                 <p> Browse by Subject: <select v-model="filterSubject">
-                    <option disabled value="">Select a subject</option>
+                 <p> Browse by subject: <select v-model="filterSubject">
                     <option value="">All Subjects</option>
-                    <option>Math</option>
-                    <option>Science</option>
-                    <option>English</option>
-                    <option>History</option>
-                    <option>Art</option>
-                    <option>Music</option>
-                    <option>Physical Education</option>
-                    <option>Foreign Languages</option>
+                    <option v-for="subject in subjects" :key="subject">{{subject}}</option>
                  </select></p>
 
                  <!--Dropdown selection for browse by teacher-->
@@ -247,6 +239,14 @@
                     });
                 },
 
+                /*Subjects taken from lessons, sorted alphabetically*/
+                subjects() {
+                    const subjects = this.lessons
+                        .filter(lesson => lesson.subject)
+                        .map(lesson => lesson.subject);
+                    return [...new Set(subjects)].sort();
+                },
+                
                 /*Teacher names taken from lessons, sorted alphabetically*/
                 teacherNames() {
                     const names = this.lessons
@@ -347,7 +347,20 @@
                     if (!this.canCheckOut) {
                         return false;
                     }
+
+                    // Find what lessons were bought before clearing cart
+                    const boughtIds = [...new Set(this.cart)];
+
+    
                     await this.postOrder();
+
+                    // PUT the new availability for each lesson in the order
+                    for (const lesson of this.lessons) {
+                        if (boughtIds.includes(lesson.lessonId)) {
+                            await this.updateLesson(lesson);
+                        }
+                    }
+
                     this.isSubmitted = true;
                     this.cart = [];
                     return true;
@@ -405,6 +418,16 @@
                     if (q === this.searchQuery.trim()) {
                         this.searchResultIds = results.map(lesson => lesson.lessonId);
                     }
+                },
+                // Updates lesson availability when an order is placed
+                async updateLesson(lesson){
+                        const url = AFTERSCHOOL_URL + "/lessons/" + lesson._id;
+                        const options = {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ availability: lesson.availability })
+                        };
+                        await fetch(url, options);
                 }
             }
         });
