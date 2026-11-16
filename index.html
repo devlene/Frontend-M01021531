@@ -9,133 +9,159 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
-        <div id ="lesson">
+    <div id="lesson">
 
-            <!--Separate placement for checkout button and search bar-->
-            <div id = "topBar">
-                <div v-if="showProduct">
-                <div id = "searchBar">
-                    <!--Text search-->
-                    <p> <i class="fa fa-search" aria-hidden="true"></i> 
-                        Search: <input v-model="searchQuery" placeholder="Search by title, location, price, or availability"></p>
-                </div>
-                </div>
-                <p class = "checkOutButton">
-                <button v-on:click="toggleCheckOut()" :disabled="showProduct && isCartEmpty">  
-                    <i class="fa fa-shopping-cart" aria-hidden="true"></i> 
-                    {{ showProduct ? 'Cart (' + cartItemCount + ')' : 'Back to products' }}</button>
-                </p>
-                </div>
+        <!--Sticky top bar: brand, search and cart/checkout button always visible-->
+        <header id="topBar">
+            <div class="brand"><i class="fa fa-graduation-cap" aria-hidden="true"></i> After School Club</div>
 
-            <div v-if="showProduct">
-
-                <div id = "fullPageHome">
-                <h1>After School Club</h1>
-
-                 <div id = "filter">
-                    <h4> Filters: </h4>
-                    <!--Dropdown selection for browse by subject-->
-                 <p> Browse by subject: <select v-model="filterSubject">
-                    <option value="">All Subjects</option>
-                    <option v-for="subject in subjects" :key="subject">{{subject}}</option>
-                 </select></p>
-
-                 <!--Dropdown selection for browse by teacher-->
-                 <p> Browse by teacher: <select v-model="filterTeacher">
-                    <option value="">All Teachers</option>
-                    <option v-for="name in teacherNames" :key="name">{{name}}</option>
-                 </select></p>
-
-                 
-                 <!--Sort by filter-->
-                 <p> Sort by:
-                    <select v-model="sortType">
-                        <option value="price">Price</option>
-                        <option value="availability">Availability</option>
-                        <option value="location">Location</option>
-                        <option value="subject">Subject</option>
-                    </select>
-                 </p>
-                 <p> Order:
-                    <select v-model="sortAscending">
-                        <option :value="true"> {{ (sortType === 'price' || sortType === 'availability') ? 'Low-High' : 'A-Z'}} </option>
-                        <option :value="false"> {{ (sortType === 'price' || sortType === 'availability') ? 'High-Low' : 'Z-A'}} </option>
-                    </select>
-                 </p>
-                 <p class = "clearFilterButton"><button v-on:click="clearFilters()" :disabled="!hasActiveFilters">
-                    <i class="fa fa-times" aria-hidden="true"></i> Clear Filters</button></p>
-                 </div>
-
-                 <!--Total results-->
-                 <p>Showing {{resultCount}} of {{lessons.length}} lessons</p>
-                 <p v-if="resultCount === 0">No lessons match your search.</p>
-
-                 <!--Lesson info boxes-->
-                 <div id ="lessonProducts">
-                    <!--Iterate through lessonsArray-->
-                 <div v-for="lessonProduct in sortedLessons" :key="lessonProduct.lessonId">
-                    <h2>{{lessonProduct.lessonTitle}}</h2>
-                    <figure>
-                    <img v-bind:src="imageAddress(lessonProduct)" v-bind:alt="lessonProduct.photo.alt">
-                    </figure>
-                    <button v-on:click="toggleDetail(lessonProduct)"> 
-                        <i class="fa fa-info-circle" aria-hidden="true"></i>
-                        {{infoButtonText(lessonProduct)}} </button>
-                    <span v-if="lessonProduct.showDetail">
-                    <p><b> Subject: </b> </p>
-                    <p>{{lessonProduct.subject}}</p>
-                    <p> <b> Teacher: </b></p>
-                    <p> {{lessonProduct.teacher.firstName}} {{lessonProduct.teacher.lastName}}</p>
-                    <p> <b> Location: </b></p>
-                    <p> {{lessonProduct.location}}</p>
-                    <p> <b> Time: </b></p>
-                    <p> {{lessonProduct.time}}</p>
-                    </span>
-                    <p> <b>Available spots: </b> {{lessonProduct.availability}}</p>
-                    <p> <b>Items of this type in Cart: </b> {{cartProductCount(lessonProduct.lessonId)}}</p>
-                    <p> <b>Price: </b> £{{lessonProduct.price}} per session</p>
-                    <button v-on:click="addToCart(lessonProduct)" :disabled="!canAddToCart(lessonProduct)"> <i class="fa fa-shopping-cart" aria-hidden="true"></i> {{cartButtonText(lessonProduct)}}</button>
-                </div>
-                </div>
-                </div>
-                
+            <div id="searchBar" v-if="showProduct">
+                <i class="fa fa-search" aria-hidden="true"></i>
+                <input v-model="searchQuery" placeholder="Search by title, location, price, or availability" aria-label="Search lessons">
             </div>
-            
-            <!--Show checkout page-->
-            <div v-else>
-                <div id = "fullPageCheckOut">
-                <h1>Checkout Page</h1>
-                <div id = "checkOutPage">
-                <h4> Items in Cart: {{cartItemCount}}</h4>
-                <ul style = "list-style-type: none;">
-                    <div v-for="lessonProduct in lessons">
-                        <div id = "checkOutList">
-                        <li v-if="cartProductCount(lessonProduct.lessonId) > 0">
-                        {{lessonProduct.lessonTitle}} ( {{cartProductCount(lessonProduct.lessonId)}} ) 
-                        <button v-on:click="removeFromCart(lessonProduct)"><i class="fa fa-trash" aria-hidden="true"></i> 
-                            Remove</button>
-                        </li>
+
+            <button class="checkOutButton" v-on:click="toggleCheckOut()" :disabled="showProduct && isCartEmpty">
+                <i :class="showProduct ? 'fa fa-shopping-cart' : 'fa fa-arrow-left'" aria-hidden="true"></i>
+                {{ showProduct ? 'Cart (' + cartItemCount + ')' : 'Back to products' }}
+            </button>
+        </header>
+
+        <main>
+            <div v-if="showProduct" id="fullPageHome">
+                <h1>Find your next activity</h1>
+
+                <!--Filters toolbar-->
+                <section id="filter">
+                    <label>Subject
+                        <select v-model="filterSubject">
+                            <option value="">All Subjects</option>
+                            <option v-for="subject in subjects" :key="subject">{{subject}}</option>
+                        </select>
+                    </label>
+
+                    <label>Teacher
+                        <select v-model="filterTeacher">
+                            <option value="">All Teachers</option>
+                            <option v-for="name in teacherNames" :key="name">{{name}}</option>
+                        </select>
+                    </label>
+
+                    <label>Sort by
+                        <select v-model="sortType">
+                            <option value="price">Price</option>
+                            <option value="availability">Availability</option>
+                            <option value="location">Location</option>
+                            <option value="subject">Subject</option>
+                        </select>
+                    </label>
+
+                    <label>Order
+                        <select v-model="sortAscending">
+                            <option :value="true">{{ (sortType === 'price' || sortType === 'availability') ? 'Low-High' : 'A-Z'}}</option>
+                            <option :value="false">{{ (sortType === 'price' || sortType === 'availability') ? 'High-Low' : 'Z-A'}}</option>
+                        </select>
+                    </label>
+
+                    <button class="secondary clearFilterButton" v-on:click="clearFilters()" :disabled="!hasActiveFilters">
+                        <i class="fa fa-times" aria-hidden="true"></i> Clear Filters
+                    </button>
+                </section>
+
+                <p class="resultCount">Showing {{resultCount}} of {{lessons.length}} lessons</p>
+                <p class="emptyMessage" v-if="resultCount === 0">No lessons match your search.</p>
+
+                <!--Lesson cards-->
+                <div id="lessonProducts">
+                    <article class="card" v-for="lessonProduct in sortedLessons" :key="lessonProduct.lessonId">
+                        <figure>
+                            <img v-bind:src="imageAddress(lessonProduct)" v-bind:alt="lessonProduct.photo.alt">
+                            <span class="priceTag">£{{lessonProduct.price}}<small> / session</small></span>
+                            <span class="cartBadge" v-if="cartProductCount(lessonProduct.lessonId) > 0">
+                                <i class="fa fa-shopping-cart" aria-hidden="true"></i> {{cartProductCount(lessonProduct.lessonId)}} in cart
+                            </span>
+                        </figure>
+
+                        <div class="cardBody">
+                            <h2>{{lessonProduct.lessonTitle}}</h2>
+                            <p class="meta"><i class="fa fa-book" aria-hidden="true"></i> {{lessonProduct.subject}}</p>
+                            <p class="meta"><i class="fa fa-map-marker" aria-hidden="true"></i> {{lessonProduct.location}}</p>
+                            <p class="spots" :class="{ low: lessonProduct.availability > 0 && lessonProduct.availability <= 2, out: lessonProduct.availability === 0 }">
+                                <b>Available spots:</b> {{lessonProduct.availability}}
+                            </p>
                         </div>
-                    </div>
-                </ul>
 
-                <p v-if="!isNameValid || !isPhoneValid">Please enter a valid name (letters only) and an 11-digit UK phone number starting with 0.</p>
-                
-                <!--Form for user input in checkout page-->
-                <p> First Name: <input v-model="firstName"></p>
-                <p> Last Name: <input v-model="lastName"></p>
-                <p> Phone Number: <input v-model="phoneNumber"></p>
-                <button v-on:click="checkOut" :disabled="!canCheckOut || isCartEmpty"> <i class="fa fa-shopping-cart" aria-hidden="true"></i> Check Out</button>
-                
-                <p v-if="isSubmitted">Thank you for your order, {{firstName}} {{lastName}}! We will contact you at {{phoneNumber}}.</p>
-
-                </div>
+                        <div class="cardActions">
+                            <button class="secondary" v-on:click="openDetail(lessonProduct)">
+                                <i class="fa fa-info-circle" aria-hidden="true"></i> More info
+                            </button>
+                            <button v-on:click="addToCart(lessonProduct)" :disabled="!canAddToCart(lessonProduct)">
+                                <i class="fa fa-shopping-cart" aria-hidden="true"></i> {{cartButtonText(lessonProduct)}}
+                            </button>
+                        </div>
+                    </article>
                 </div>
             </div>
-            
-        </div>
 
-    <script type = "module">
+            <!--Show checkout page-->
+            <div v-else id="fullPageCheckOut">
+                <h1>Checkout</h1>
+                <div id="checkOutPage">
+                    <h4>Items in Cart: {{cartItemCount}}</h4>
+                    <ul class="cartList">
+                        <template v-for="lessonProduct in lessons" :key="lessonProduct.lessonId">
+                            <li id="checkOutList" v-if="cartProductCount(lessonProduct.lessonId) > 0">
+                                <span>{{lessonProduct.lessonTitle}} <b class="qty">&times; {{cartProductCount(lessonProduct.lessonId)}}</b></span>
+                                <button class="secondary small" v-on:click="removeFromCart(lessonProduct)">
+                                    <i class="fa fa-trash" aria-hidden="true"></i> Remove
+                                </button>
+                            </li>
+                        </template>
+                    </ul>
+
+                    <!--Form for user input in checkout page-->
+                    <label>First Name
+                        <input v-model="firstName" :class="{ invalid: firstName !== '' && !isNameValid }">
+                    </label>
+                    <label>Last Name
+                        <input v-model="lastName" :class="{ invalid: lastName !== '' && !isNameValid }">
+                    </label>
+                    <label>Phone Number
+                        <input v-model="phoneNumber" :class="{ invalid: phoneNumber !== '' && !isPhoneValid }">
+                    </label>
+
+                    <p class="hint" v-if="!isNameValid || !isPhoneValid">Please enter a valid name (letters only) and an 11-digit UK phone number starting with 0.</p>
+
+                    <button v-on:click="checkOut" :disabled="!canCheckOut || isCartEmpty">
+                        <i class="fa fa-check" aria-hidden="true"></i> Check Out
+                    </button>
+
+                    <p class="success" v-if="isSubmitted">Thank you for your order, {{firstName}} {{lastName}}! We will contact you at {{phoneNumber}}.</p>
+                </div>
+            </div>
+        </main>
+
+        <!--Details modal: opens above the page-->
+        <div class="overlay" v-if="selectedLesson" v-on:click.self="closeDetail()">
+            <div class="modal" role="dialog" aria-modal="true" :aria-label="selectedLesson.lessonTitle">
+                <button class="closeButton" v-on:click="closeDetail()" aria-label="Close"><i class="fa fa-times" aria-hidden="true"></i></button>
+                <img v-bind:src="imageAddress(selectedLesson)" v-bind:alt="selectedLesson.photo.alt">
+                <h2>{{selectedLesson.lessonTitle}}</h2>
+                <dl>
+                    <dt>Subject</dt><dd>{{selectedLesson.subject}}</dd>
+                    <dt>Teacher</dt><dd>{{selectedLesson.teacher.firstName}} {{selectedLesson.teacher.lastName}}</dd>
+                    <dt>Location</dt><dd>{{selectedLesson.location}}</dd>
+                    <dt>Time</dt><dd>{{selectedLesson.time}}</dd>
+                    <dt>Price</dt><dd>£{{selectedLesson.price}} per session</dd>
+                    <dt>Available spots</dt><dd>{{selectedLesson.availability}}</dd>
+                </dl>
+                <button v-on:click="addToCart(selectedLesson)" :disabled="!canAddToCart(selectedLesson)">
+                    <i class="fa fa-shopping-cart" aria-hidden="true"></i> {{cartButtonText(selectedLesson)}}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
         const AFTERSCHOOL_URL = "https://backend-m01021531.onrender.com";
         const { createApp } = Vue;
         const myApp = createApp({
@@ -152,6 +178,7 @@
                     searchResultIds: null,
                     filterSubject: "",
                     filterTeacher: "",
+                    selectedLesson: null, // lesson currently shown in the details modal
                     sortType: "price",  // "price" / "availability" / "location" / "subject"
                     sortAscending: true // true = ascending, false = descending
                 }
@@ -278,15 +305,15 @@
                 }
             },
             /*Watch search results from backend*/
-                watch: {
-                    searchQuery() {
-                        this.fetchSearch();
-                    }
-                },
+            watch: {
+                searchQuery() {
+                    this.fetchSearch();
+                }
+            },
 
             /*Fetch data from backend*/
-                created() {
-                    this.fetchData();
+            created() {
+                this.fetchData();
 
             },
             methods: {
@@ -330,14 +357,20 @@
                     return !this.canAddToCart(lessonProduct) ? "Sold Out" : "Add to Cart";
                 },
 
-                /*Change "Show more" button to "Show less" when clicking it*/
-                infoButtonText(lessonProduct) {
-                    return lessonProduct.showDetail ? "Show less" : "Show more";
+                /*Open the details modal for one lesson*/
+                openDetail(lessonProduct) {
+                    this.selectedLesson = lessonProduct;
+                },
+
+                /*Close the details modal*/
+                closeDetail() {
+                    this.selectedLesson = null;
                 },
 
                 /*Toggle check out page*/
                 toggleCheckOut() {
                     this.showProduct = this.showProduct ? false : true;
+                    window.scrollTo({ top: 0 }); /*When toggling checkout page, home page does not get stuck mid scroll*/
                 },
 
                 /*Checkout button is disabled if user info is not valid
@@ -351,7 +384,6 @@
                     // Find what lessons were bought before clearing cart
                     const boughtIds = [...new Set(this.cart)];
 
-    
                     await this.postOrder();
 
                     // PUT the new availability for each lesson in the order
@@ -364,11 +396,6 @@
                     this.isSubmitted = true;
                     this.cart = [];
                     return true;
-                },
-
-                /*Toggles more details about lesson with "Show more" button*/
-                toggleDetail(lessonProduct) {
-                    lessonProduct.showDetail = !lessonProduct.showDetail;
                 },
 
                 /*Clear chosen filters*/

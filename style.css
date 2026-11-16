@@ -1,131 +1,608 @@
-div {
+/* Colours, shadows and sizes are stored as variables here so they can be
+   reused with var(--name) and changed in one place. */
+:root {
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-soft: #eef2ff;
+    --danger: #dc2626;
+    --warn: #d97706;
+    --ok: #059669;
+    --radius: 16px;
+    --shadow: 0 1px 3px rgb(0 0 0 / 8%), 0 6px 18px rgb(17 24 39 / 6%);
+    --shadow-hover: 0 4px 10px rgb(0 0 0 / 8%), 0 14px 30px rgb(17 24 39 / 12%);
+    --topbar-height: 68px;
+}
+
+/* border-box makes width include padding and border, so elements
+   don't overflow their container when padding is added. */
+* {
+    box-sizing: border-box;
+}
+
+/* Leaves space at the top when scrolling to an element so the
+   sticky bar doesn't cover it. */
+html {
+    scroll-padding-top: calc(var(--topbar-height) + 16px);
+}
+
+/* Page-wide defaults, inherited by everything inside the body. */
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+}
+
+/* clamp(min, preferred, max): the heading scales with screen width
+   but stays between 1.6rem and 2.2rem. */
+h1 {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    margin: 8px 0 20px;
+    letter-spacing: -0.02em;
+}
+
+h2 {
+    font-size: 1.15rem;
+    margin: 0 0 6px;
+}
+
+/* Default paragraph margins are removed so each component controls its own spacing. */
+p {
+    margin: 0;
+}
+
+/* ---------- Sticky top bar ---------- */
+
+/* position: sticky keeps the bar at the top while scrolling, so the cart
+   button is always reachable. z-index keeps it above the cards. The
+   semi-transparent background plus blur lets content faintly show through. */
+#topBar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: var(--topbar-height);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 24px;
+    background: rgb(255 255 255 / 85%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+}
+
+.brand {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--primary);
+    white-space: nowrap;
+}
+
+/* The search wrapper takes the free space between the brand and the cart
+   button (flex: 1). position: relative lets the icon be placed inside it. */
+#searchBar {
+    flex: 1;
+    max-width: 560px;
+    margin: 0 auto;
+    position: relative;
+}
+
+/* The magnifier icon is positioned over the left side of the input.
+   pointer-events: none lets clicks pass through to the input. */
+#searchBar i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+}
+
+/* The large left padding leaves room for the icon. The big border-radius
+   gives rounded pill ends. */
+#searchBar input {
+    width: 100%;
+    padding: 10px 14px 10px 38px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg);
+    font: inherit;
+    font-size: 0.95rem;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+/* Focus state: custom border and a soft glow replace the default outline. */
+#searchBar input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: var(--surface);
+    box-shadow: 0 0 0 4px var(--primary-soft);
+}
+
+/* margin-left: auto pushes the cart button to the far right. */
+.checkOutButton {
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+/* ---------- Buttons ---------- */
+
+/* Base style for all buttons. The variants below override parts of it. */
+button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 999px;
+    background: var(--primary);
+    color: #fff;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+
+/* :not(:disabled) stops greyed-out buttons reacting to hover or click. */
+button:hover:not(:disabled) {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 12px rgb(79 70 229 / 30%);
+}
+
+button:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+/* :focus-visible only shows the outline for keyboard navigation (Tab). */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+    outline: 3px solid var(--primary-soft);
+    outline-offset: 2px;
+}
+
+/* Disabled state: used for Sold Out, an empty cart and invalid checkout. */
+button:disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Secondary buttons (More info, Clear Filters, Remove) use a lighter style. */
+button.secondary {
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+button.secondary:hover:not(:disabled) {
+    background: #e0e7ff;
+    box-shadow: none;
+}
+
+button.secondary:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+}
+
+button.small {
+    padding: 6px 12px;
+    font-size: 0.82rem;
+}
+
+/* ---------- Page layout ---------- */
+
+/* max-width stops the content stretching on large screens;
+   margin: 0 auto centres it. */
+main {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 24px 24px 56px;
+}
+
+/* Products heading is left-aligned, checkout heading is centred. */
+#fullPageHome h1,
+#fullPageCheckOut h1 {
+    text-align: left;
+}
+
+#fullPageCheckOut h1 {
     text-align: center;
 }
 
-body {
-    background-color: #ffffff;
-    font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+/* ---------- Filters ---------- */
+
+/* A white panel holding the four dropdowns in one row.
+   flex-wrap lets them drop to a new line on narrow screens. */
+#filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
 }
 
-#fullPageHome {
-    background-color: #5ca77f27;
-    padding: 10px;
-    border-radius: 2%;
+/* Each label stacks its small caption above its dropdown. */
+#filter label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
 }
 
-#fullPageCheckOut {
-    background-color: #5ca77f27;
-    padding: 10px;
-    border-radius: 2%;
+/* text-transform and letter-spacing are reset because they would otherwise
+   be inherited from the uppercase label and affect the dropdown text. */
+select {
+    min-width: 150px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.92rem;
+    text-transform: none;
+    letter-spacing: normal;
+    cursor: pointer;
 }
 
+/* Pushes Clear Filters to the right end of the filter row. */
+.clearFilterButton {
+    margin-left: auto;
+}
+
+.resultCount {
+    margin: 20px 4px 12px;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.emptyMessage {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--muted);
+}
+
+/* ---------- Lesson cards ---------- */
+
+/* Responsive grid: auto-fill creates as many columns as fit, each at least
+   280px wide, sharing leftover space equally (1fr).
+   align-items: start means each card keeps its own height, so one card
+   changing size does not stretch the others in its row. */
 #lessonProducts {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 16px;
-    padding: 16px;
-    margin: 30px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    align-items: start;
 }
 
-#lessonProducts > div {
-    padding: 16px;
-    border: 1px solid #a8a8a8;
-    border-radius: 10px;
-    background-color: #abd0f360;
-    box-shadow: 0 2px 6px rgb(0 0 0 / 12%);
+/* overflow: hidden clips the image to the card's rounded corners. */
+.card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-#checkOutPage {
-    padding: 16px;
-    border: 1px solid #a8a8a8;
-    border-radius: 10px;
-    background-color: #abd0f360;
-    box-shadow: 0 2px 6px rgb(0 0 0 / 12%);
-    display: grid;
-    max-width: 35%;
-    margin: auto;
+/* Hover: the card lifts slightly and the shadow grows. */
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
 }
 
-#filter {
-    padding: 16px;
-    border-radius: 10px;
-    background-color: #abd0f360;
-    flex-wrap: wrap;
-    max-height: fit-content;
-    max-width: 20%;
-    margin: auto;
+/* position: relative on the figure lets the price tag and cart badge be
+   placed on top of the image with position: absolute. */
+.card figure {
+    position: relative;
+    margin: 0;
 }
 
-#filter h4 {
-    flex-basis: 100%;
+/* object-fit: cover fills the 180px box and crops the image rather than
+   stretching it. */
+.card img {
+    display: block;
     width: 100%;
-    margin: 0 0 8px 0;
+    height: 180px;
+    object-fit: cover;
+    background: var(--primary-soft);
 }
 
-img {
-    max-width: 90%;
-    height: 125px;
-    border-radius: 5px;
+/* Price tag in the top-right corner of the image. */
+.priceTag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 92%);
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
 }
 
-figure {
+.priceTag small {
+    font-weight: 500;
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+/* "x in cart" badge in the bottom-left corner of the image.
+   It only exists when that lesson is in the cart (v-if in the HTML). */
+.cartBadge {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+/* Text area of the card (title, subject, location, spots). */
+.cardBody {
+    padding: 16px 18px 4px;
+    text-align: left;
+}
+
+.meta {
     display: flex;
-    justify-content: center;
-    margin-top: 20px;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 0.9rem;
 }
 
-button { 
-    background-color: #aeccf5;
-    color: rgb(0, 0, 0);
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
- } 
-
-button:hover {
-    background-color: #90b5da;
+.meta i {
+    width: 14px;
+    text-align: center;
+    color: var(--primary);
 }
 
-.checkOutButton {
-    display: flex;
-    justify-content: end;
-    margin-left: auto;
-    margin-right: 150px;
-    margin-bottom: 25px;
-}
-
-#checkOutList {
-    justify-content: center;
+/* Availability colour: green by default, amber with the "low" class
+   (1-2 spots), red with the "out" class (0 spots). The classes are
+   toggled in the HTML with :class. */
+.spots {
     margin-top: 10px;
-    margin-bottom: 5px;
+    font-size: 0.88rem;
+    color: var(--ok);
 }
 
-.clearFilterButton {
+.spots.low {
+    color: var(--warn);
+}
+
+.spots.out {
+    color: var(--danger);
+}
+
+/* The two buttons share the width equally (flex: 1). */
+.cardActions {
+    display: flex;
+    gap: 10px;
+    padding: 14px 18px 18px;
+}
+
+.cardActions button {
+    flex: 1;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+/* ---------- Details modal ---------- */
+
+/* The overlay covers the whole screen (position: fixed; inset: 0) with a
+   dark semi-transparent background and centres the modal inside it.
+   z-index 100 puts it above the top bar (50). */
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    margin-top: 20px;
-    margin-bottom: 3px;
+    padding: 20px;
+    background: rgb(17 24 39 / 55%);
+    backdrop-filter: blur(3px);
+    animation: fade 0.15s ease-out;
 }
 
-#searchBar {
-    display: flex;
-    justify-content: start;
-    margin-left: 150px;
-    margin-bottom: 15px;
-    padding-top: 10px;
+/* The modal box. max-height with overflow-y: auto makes it scroll
+   internally if the content is taller than the screen.
+   position: relative lets the close button be placed in its corner. */
+.modal {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px;
+    background: var(--surface);
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgb(0 0 0 / 30%);
+    text-align: left;
+    animation: pop 0.18s ease-out;
 }
 
-#topBar {
+.modal img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.modal h2 {
+    font-size: 1.4rem;
+    margin-bottom: 12px;
+}
+
+/* The details list is a two-column grid: labels (dt) on the left,
+   values (dd) on the right. */
+.modal dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 16px;
+    margin: 0 0 20px;
+}
+
+.modal dt {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.modal dd {
+    margin: 0;
+    font-weight: 600;
+}
+
+/* Makes the Add to Cart button at the bottom of the modal full width. */
+.modal > button:last-child {
+    width: 100%;
+}
+
+/* Round close button in the top-right corner of the modal. */
+.closeButton {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: rgb(255 255 255 / 90%);
+    color: var(--text);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+}
+
+.closeButton:hover:not(:disabled) {
+    background: #fff;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
+}
+
+/* Opening animations: the backdrop fades in and the modal slides up
+   slightly while growing to full size. */
+@keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes pop {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+}
+
+/* ---------- Checkout ---------- */
+
+/* The checkout card is a single column (flex-direction: column) centred on
+   the page with a maximum width. */
+#checkOutPage {
     display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    text-align: left;
+}
+
+#checkOutPage h4 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* Cart list: list-style: none removes the bullet points. */
+.cartList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Each cart row: lesson name on the left, Remove button on the right
+   (space-between). */
+#checkOutList {
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    margin-left: 10px;
-    margin-right: 10px;
-    margin-bottom: 15px;
-    padding-top: 10px;
-    border-radius: 10px;
-    background-color: #abd0f360;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border-radius: 12px;
 }
 
-button:disabled {
-    background-color: #cccccc;
+.qty {
+    color: var(--primary);
+    margin-left: 4px;
+}
+
+/* Form fields: each label stacks its caption above its input. */
+#checkOutPage label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+#checkOutPage input {
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font: inherit;
+    color: var(--text);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+#checkOutPage input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--primary-soft);
+}
+
+/* The "invalid" class is added in the HTML (:class) when the field has text
+   that fails the name/phone validation. */
+#checkOutPage input.invalid {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 4px rgb(220 38 38 / 10%);
+}
+
+.hint {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+/* Green confirmation message shown after a successful order. */
+.success {
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: #ecfdf5;
+    color: #065f46;
+    font-weight: 500;
 }
