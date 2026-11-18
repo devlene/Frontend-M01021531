@@ -173,7 +173,6 @@ input:focus-visible {
 button:disabled {
     background: #e5e7eb;
     color: #9ca3af;
-    cursor: not-allowed;
 }
 
 /* Secondary buttons (More info, Clear Filters, Remove) use a lighter style. */
